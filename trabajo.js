@@ -15,6 +15,8 @@ class TareaItem extends HTMLElement {
     const fecha = this.getAttribute('data-fecha') || new Date().toLocaleDateString();
     const completado = this.getAttribute('data-completado') === 'true';
     const esImportada = this.getAttribute('data-importada') === 'true';
+    const categoriaNombre = this.getAttribute('data-cat-nombre') || '';
+    const categoriaColor = this.getAttribute('data-cat-color') || '#0ea5e9';
 
     this.shadowRoot.innerHTML = `
       <style>
@@ -30,7 +32,7 @@ class TareaItem extends HTMLElement {
           border-radius: 10px;
           background-color: #ffffff;
           border: 1.5px solid #f1f5f9;
-          border-left: 5px solid #0ea5e9;
+          border-left: 5px solid ${categoriaColor};
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
         .tarea-item.completada {
@@ -52,6 +54,7 @@ class TareaItem extends HTMLElement {
           display: flex;
           align-items: center;
           gap: 10px;
+          flex-wrap: wrap;
         }
         .titulo {
           font-weight: 600;
@@ -69,6 +72,14 @@ class TareaItem extends HTMLElement {
           padding: 2px 8px;
           border-radius: 20px;
           font-weight: 700;
+        }
+        .badge-cat {
+          background-color: ${categoriaColor};
+          color: white;
+          font-size: 0.7rem;
+          padding: 2px 8px;
+          border-radius: 20px;
+          font-weight: 600;
         }
         .fecha {
           font-size: 0.8rem;
@@ -95,6 +106,7 @@ class TareaItem extends HTMLElement {
             <input type="checkbox" class="chk-estado" ${completado ? 'checked' : ''}>
             <span class="titulo">${titulo}</span>
             <span class="fecha">(${fecha})</span>
+            ${categoriaNombre ? `<span class="badge-cat">${categoriaNombre}</span>` : ''}
             ${esImportada ? '<span class="badge">Importada</span>' : ''}
           </div>
           ${descripcion ? `<div class="descripcion">${descripcion}</div>` : ''}
@@ -134,6 +146,9 @@ const modalTarea = document.getElementById('modalTarea');
 const formTarea = document.getElementById('formTarea');
 const inputTitulo = document.getElementById('inputTitulo');
 const inputDescripcion = document.getElementById('inputDescripcion');
+const selectCategoria = document.getElementById('selectCategoria');
+const selectCategoriaImportar = document.getElementById('selectCategoriaImportar');
+const filtroCategoria = document.getElementById('filtroCategoria');
 const tareaIdInput = document.getElementById('tareaId');
 const modalImportar = document.getElementById('modalImportar');
 const listaApi = document.getElementById('listaApi');
@@ -146,15 +161,23 @@ function renderizarTareas() {
 
   const textoBuscador = buscador.value.toLowerCase();
   const estadoFiltro = filtroEstado.value;
+  const categoriaFiltro = filtroCategoria ? filtroCategoria.value : 'todas';
 
   const tareasFiltradas = tareas.filter(t => {
     const coincideTexto = t.titulo.toLowerCase().includes(textoBuscador) || 
                           (t.descripcion && t.descripcion.toLowerCase().includes(textoBuscador));
+    
     const coincideEstado = 
       estadoFiltro === 'todas' ? true :
       estadoFiltro === 'completadas' ? t.completado :
       !t.completado;
-    return coincideTexto && coincideEstado;
+
+    const coincideCategoria = 
+      categoriaFiltro === 'todas' ? true :
+      categoriaFiltro === 'sin_categoria' ? (!t.categoriaId || t.categoriaId === '') :
+      t.categoriaId === categoriaFiltro;
+
+    return coincideTexto && coincideEstado && coincideCategoria;
   });
 
   if (tareasFiltradas.length === 0) {
@@ -171,6 +194,15 @@ function renderizarTareas() {
     item.setAttribute('data-fecha', tarea.fecha || new Date().toLocaleDateString());
     item.setAttribute('data-completado', tarea.completado);
     item.setAttribute('data-importada', tarea.esImportada || false);
+
+   
+    if (tarea.categoriaId && typeof categorias !== 'undefined') {
+      const cat = categorias.find(c => c.id === tarea.categoriaId);
+      if (cat) {
+        item.setAttribute('data-cat-nombre', cat.nombre);
+        item.setAttribute('data-cat-color', cat.color);
+      }
+    }
 
     listaTareas.appendChild(item);
   });
@@ -194,12 +226,14 @@ formTarea.addEventListener('submit', (e) => {
   const id = tareaIdInput.value;
   const titulo = inputTitulo.value.trim();
   const descripcion = inputDescripcion ? inputDescripcion.value.trim() : '';
+  const catId = selectCategoria ? selectCategoria.value : '';
 
   if (id) {
     const tarea = tareas.find(t => t.id === id);
     if (tarea) {
       tarea.titulo = titulo;
       tarea.descripcion = descripcion;
+      tarea.categoriaId = catId;
     }
   } else {
     tareas.push({
@@ -208,7 +242,8 @@ formTarea.addEventListener('submit', (e) => {
       descripcion: descripcion,
       fecha: new Date().toLocaleDateString(),
       completado: false,
-      esImportada: false
+      esImportada: false,
+      categoriaId: catId
     });
   }
 
@@ -220,6 +255,7 @@ document.getElementById('btnNuevaTarea').addEventListener('click', () => {
   document.getElementById('tituloModal').innerText = 'Nueva Tarea';
   tareaIdInput.value = '';
   formTarea.reset();
+  if (selectCategoria) selectCategoria.value = '';
   modalTarea.classList.remove('oculto');
 });
 
@@ -230,7 +266,8 @@ function prepararEdicion(id) {
   document.getElementById('tituloModal').innerText = 'Editar Tarea';
   tareaIdInput.value = tarea.id;
   inputTitulo.value = tarea.titulo;
-  if(inputDescripcion) inputDescripcion.value = tarea.descripcion || '';
+  if (inputDescripcion) inputDescripcion.value = tarea.descripcion || '';
+  if (selectCategoria) selectCategoria.value = tarea.categoriaId || '';
   modalTarea.classList.remove('oculto');
 }
 
@@ -242,10 +279,14 @@ document.getElementById('btnCerrarModal').addEventListener('click', cerrarModal)
 
 buscador.addEventListener('input', renderizarTareas);
 filtroEstado.addEventListener('change', renderizarTareas);
+if (filtroCategoria) {
+  filtroCategoria.addEventListener('change', renderizarTareas);
+}
 
 // 4. IMPORTAR DESDE API
 document.getElementById('btnAbrirImportar').addEventListener('click', async () => {
   modalImportar.classList.remove('oculto');
+  if (selectCategoriaImportar) selectCategoriaImportar.value = '';
   listaApi.innerHTML = '<p style="padding: 20px; text-align: center;">Cargando banco de tareas desde la API...</p>';
 
   try {
@@ -264,7 +305,7 @@ function mostrarTareasApiEnModal(datos) {
   listaApi.innerHTML = '';
   
   const contenedorScroll = document.createElement('div');
-  contenedorScroll.style.maxHeight = '300px';
+  contenedorScroll.style.maxHeight = '240px';
   contenedorScroll.style.overflowY = 'auto';
   contenedorScroll.style.border = '1px solid #ddd';
   contenedorScroll.style.padding = '10px';
@@ -313,6 +354,8 @@ document.getElementById('btnGuardarImportadas').addEventListener('click', () => 
     return;
   }
 
+  const categoriaSeleccionada = selectCategoriaImportar ? selectCategoriaImportar.value : '';
+
   checkboxes.forEach(chk => {
     tareas.push({
       id: 'task_imp_' + chk.dataset.id,
@@ -320,7 +363,8 @@ document.getElementById('btnGuardarImportadas').addEventListener('click', () => 
       descripcion: 'Importado de API externa',
       fecha: new Date().toLocaleDateString(),
       completado: false,
-      esImportada: true 
+      esImportada: true,
+      categoriaId: categoriaSeleccionada
     });
   });
   

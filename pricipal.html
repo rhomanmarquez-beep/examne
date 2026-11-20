@@ -12,18 +12,22 @@
     <h1>Mis Tareas</h1>
 
     <div class="acciones-principales">
-      <button id="btnNuevaTarea" class="btn primario"> Nueva Tarea</button>
-      <button id="btnAbrirImportar" class="btn secundario"> Importar de la API</button>
-      <button id="btnMarcarTodas" class="btn secundario"> Marcar todas completas</button>
-      <button id="btnVaciar" class="btn peligro"> Vaciar todo</button>
+      <button id="btnNuevaTarea" class="btn primario">Nueva Tarea</button>
+      <button id="btnGestionarCategorias" class="btn secundario">⚙️ Gestionar Categorías</button>
+      <button id="btnAbrirImportar" class="btn secundario">Importar de la API</button>
+      <button id="btnMarcarTodas" class="btn secundario">Marcar todas completas</button>
+      <button id="btnVaciar" class="btn peligro">Vaciar todo</button>
     </div>
 
     <div class="filtros">
-      <input type="text" id="buscador" placeholder=" Buscar tarea...">
+      <input type="text" id="buscador" placeholder="Buscar tarea...">
       <select id="filtroEstado">
         <option value="todas">Todas</option>
         <option value="pendientes">Pendientes</option>
         <option value="completadas">Completadas</option>
+      </select>
+      <select id="filtroCategoria">
+        <option value="todas">Todas las categorías</option>
       </select>
     </div>
 
@@ -31,6 +35,7 @@
     <p id="mensajeVacio" class="vacio">No hay tareas creadas todavía.</p>
   </main>
 
+  
   <div id="modalTarea" class="modal oculto">
     <div class="modal-contenido">
       <h2 id="tituloModal">Nueva Tarea</h2>
@@ -40,10 +45,14 @@
         <label for="inputTitulo">Título:</label>
         <input type="text" id="inputTitulo" required placeholder="Ej. Estudiar JavaScript">
         
-      
         <label for="inputDescripcion">Descripción:</label>
         <textarea id="inputDescripcion" rows="3" placeholder="Ej. Repasar promesas, async/await y fetch"></textarea>
         
+        <label for="selectCategoria">Categoría:</label>
+        <select id="selectCategoria" style="width: 100%; padding: 12px; margin-bottom: 24px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #f8fafc;">
+          <option value="">-- Sin categoría --</option>
+        </select>
+
         <div class="modal-acciones">
           <button type="button" id="btnCerrarModal" class="btn secundario">Cancelar</button>
           <button type="submit" class="btn primario">Guardar</button>
@@ -52,18 +61,52 @@
     </div>
   </div>
 
+  
   <div id="modalImportar" class="modal oculto">
     <div class="modal-contenido grande">
       <h2>Importar Tareas de Internet (API)</h2>
+      
+      <div style="margin-bottom: 16px;">
+        <label for="selectCategoriaImportar">Asignar categoría a las importadas:</label>
+        <select id="selectCategoriaImportar" style="width: 100%; padding: 12px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #f8fafc;">
+          <option value="">-- Sin categoría --</option>
+        </select>
+      </div>
+
       <div id="listaApi" class="lista-api">Cargando...</div>
+      
       <div class="modal-acciones">
         <button type="button" id="btnCerrarImportar" class="btn secundario">Cerrar</button>
         <button type="button" id="btnGuardarImportadas" class="btn primario">Guardar Seleccionadas</button>
       </div>
     </div>
   </div>
+
+  
+  <div id="modalCategorias" class="modal oculto">
+    <div class="modal-contenido">
+      <h2>Gestión de Categorías</h2>
+      
+      <form id="formCategoria" style="margin-bottom: 20px;">
+        <input type="hidden" id="catId">
+        <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+          <input type="text" id="catNombre" placeholder="Nombre de categoría" required style="flex: 1; margin-bottom: 0;">
+          <input type="color" id="catColor" value="#0ea5e9" style="height: 44px; width: 50px; border: 1.5px solid #e2e8f0; border-radius: 10px; cursor: pointer; background: none;">
+        </div>
+        <button type="submit" class="btn primario" style="width: 100%;">Guardar Categoría</button>
+      </form>
+
+      <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; margin-bottom: 20px;" id="listaCategoriasModal">
+ 
+      </div>
+
+      <div class="modal-acciones">
+        <button type="button" id="btnCerrarCategorias" class="btn secundario">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
   <script src="gestion.js"></script>
   <script src="trabajo.js"></script>
- 
 </body>
 </html>
